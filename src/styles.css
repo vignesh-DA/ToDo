@@ -172,6 +172,21 @@ div.nav:hover .edit, .edit:focus-visible { opacity: 1; }
 }
 .dash h2 { margin: 0; font-size: 20px; }
 .dash h4 { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+.dash-greeting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.live-clock {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--acc);
+  font-variant-numeric: tabular-nums;  /* digits don't jump width */
+  white-space: nowrap;
+}
 .stats { display: flex; gap: 10px; }
 .stats div {
   flex: 1;

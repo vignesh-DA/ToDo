@@ -203,6 +203,13 @@ function Panel({ t, data, onPatch, onClose, onDup, onDel }) {
 }
 
 function Dashboard({ tasks }) {
+  // ── Live clock: updates every second ────────────────────────
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);   // cleanup on unmount
+  }, []);
+
   const t = today();
   const open = tasks.filter((x) => x.status !== 'done');
   const overdue = open.filter((x) => x.due && x.due < t).length;
@@ -216,13 +223,26 @@ function Dashboard({ tasks }) {
   const max = Math.max(1, ...days.map((x) => x.n));
   const week = days.reduce((a, x) => a + x.n, 0);
   const soon = open.filter((x) => x.due > t).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 3);
-  const h = new Date().getHours();
+
+  const h = now.getHours();
   const hi = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+
+  // Format: "Saturday, October 17, 2026"
+  const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  // Format: "11:33:04 PM"
+  const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
   return (
     <section className="dash">
-      <div>
-        <h2>{hi}</h2>
-        <p className="muted">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+      <div className="dash-greeting">
+        <div>
+          <h2>{hi}</h2>
+          <p className="muted">{dateStr}</p>
+        </div>
+        <div className="live-clock" aria-live="off" aria-label={`Current time: ${timeStr}`}>
+          {timeStr}
+        </div>
       </div>
       <div className="stats">
         <div><b>{open.length}</b><span>Open</span></div>
@@ -246,6 +266,7 @@ function Dashboard({ tasks }) {
     </section>
   );
 }
+
 
 function ListDialog({ list, lists, onSave, onDelete, onMove, onClose }) {
   const [name, setName] = useState(list.name || '');
