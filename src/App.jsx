@@ -324,6 +324,8 @@ export default function App() {
   const searchRef = useRef(null);
   const timer = useRef(null);
 
+  const isFirstMount = useRef(true);
+
   // Keep ref in sync
   useEffect(() => {
     ref.current = data;
@@ -335,9 +337,28 @@ export default function App() {
     } catch {}
   }, [view]);
 
+  // Don't overwrite localStorage on the very first mount!
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
     save(data);
   }, [data]);
+
+  // Guarantee save when tab is closed or switched (mobile/desktop backgrounding)
+  useEffect(() => {
+    const handleSave = () => {
+      if (ref.current) save(ref.current);
+    };
+    window.addEventListener('pagehide', handleSave);
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') handleSave();
+    });
+    return () => {
+      window.removeEventListener('pagehide', handleSave);
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = data.settings.theme;

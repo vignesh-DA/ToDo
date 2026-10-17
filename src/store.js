@@ -83,16 +83,33 @@ function migrate(old) {
 
 export function load() {
   try {
-    const cur = JSON.parse(localStorage.getItem(KEY));
-    if (cur && Array.isArray(cur.lists) && Array.isArray(cur.tasks)) {
-      return { ...defaults(), ...cur, settings: { ...defaults().settings, ...cur.settings } };
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const cur = JSON.parse(raw);
+      if (cur && Array.isArray(cur.tasks)) {
+        return {
+          ...defaults(),
+          ...cur,
+          lists: Array.isArray(cur.lists) && cur.lists.length > 0 ? cur.lists : defaults().lists,
+          settings: { ...defaults().settings, ...(cur.settings || {}) },
+        };
+      }
     }
     const old = JSON.parse(localStorage.getItem(OLD));
     if (Array.isArray(old)) return migrate(old);
-  } catch { /* fall through to defaults */ }
+  } catch (err) {
+    console.error('[Taskspaces] Error loading tasks from localStorage:', err);
+  }
   return defaults();
 }
 
 export function save(data) {
-  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* storage unavailable */ }
+  if (!data || !Array.isArray(data.tasks)) return;
+  try {
+    const str = JSON.stringify(data);
+    localStorage.setItem(KEY, str);
+  } catch (err) {
+    console.error('[Taskspaces] Failed to save tasks to localStorage:', err);
+  }
 }
+
