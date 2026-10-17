@@ -305,7 +305,13 @@ function ListDialog({ list, lists, onSave, onDelete, onMove, onClose }) {
 export default function App() {
   const [data, setData] = useState(load);
   const ref = useRef(data);
-  const [view, setView] = useState('today');
+  const [view, setView] = useState(() => {
+    try {
+      return localStorage.getItem('taskspaces_view') || 'today';
+    } catch {
+      return 'today';
+    }
+  });
   const [sel, setSel] = useState(null);
   const [q, setQ] = useState('');
   const [sortKey, setSortKey] = useState('due');
@@ -318,17 +324,42 @@ export default function App() {
   const searchRef = useRef(null);
   const timer = useRef(null);
 
-  useEffect(() => { save(data); }, [data]);
-  useEffect(() => { document.documentElement.dataset.theme = data.settings.theme; }, [data.settings.theme]);
+  // Keep ref in sync
+  useEffect(() => {
+    ref.current = data;
+  }, [data]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('taskspaces_view', view);
+    } catch {}
+  }, [view]);
+
+  useEffect(() => {
+    save(data);
+  }, [data]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = data.settings.theme;
+  }, [data.settings.theme]);
 
   function commit(fn, msg) {
     const prev = ref.current;
     const next = fn(prev);
     ref.current = next;
     setData(next);
+    save(next); // Synchronous immediate save to localStorage
     clearTimeout(timer.current);
     if (msg) {
-      setToast({ msg, undo: () => { ref.current = prev; setData(prev); setToast(null); } });
+      setToast({
+        msg,
+        undo: () => {
+          ref.current = prev;
+          setData(prev);
+          save(prev);
+          setToast(null);
+        },
+      });
       timer.current = setTimeout(() => setToast(null), 5000);
     }
   }
